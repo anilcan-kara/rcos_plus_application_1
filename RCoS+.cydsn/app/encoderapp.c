@@ -12,6 +12,7 @@
 
 #include "encoderapp.h"
 #include "dev/pattern.h"
+#include <stdbool.h> // bool, true, false tanımları için
 
 #define DEBUG_FILE_NAME ""
 
@@ -22,43 +23,46 @@
  *  @addtogroup ENCODERAPP
  *  @{
  */
-#define HIGH (1)     
+#define HIGH (1)
 #define LOW (0)
+#define SEGMENT_MAX 15
+#define SEGMENT_MIN 0
 
+uint8_t segmentValue = 0;
+bool counting = false;
+bool countUp = true;
 
 const tsPatternNode melody[] =
-{
- PATTERN_NODE(NOTE_4_A , 2000),
-PATTERN_NODE(NOTE_5_SOL , 1000),
-PATTERN_NODE_END(0)
-};
+    {
+        PATTERN_NODE(NOTE_4_A, 2000),
+        PATTERN_NODE(NOTE_5_SOL, 1000),
+        PATTERN_NODE_END(0)};
 
 const tsPatternNode melody2[] =
-{
- PATTERN_NODE(NOTE_6_A , 1000),
-PATTERN_NODE(NOTE_8_SOL , 1000),
-PATTERN_NODE_END(0)
-};
+    {
+        PATTERN_NODE(NOTE_6_A, 1000),
+        PATTERN_NODE(NOTE_8_SOL, 1000),
+        PATTERN_NODE_END(0)};
 
 const tsPatternNode melody3[] =
-{
- PATTERN_NODE(NOTE_5_A , 3000),
-PATTERN_NODE(NOTE_7_SOL , 1000),
-PATTERN_NODE_END(0)
-};
+    {
+        PATTERN_NODE(NOTE_5_A, 3000),
+        PATTERN_NODE(NOTE_7_SOL, 1000),
+        PATTERN_NODE_END(0)};
 
 const tsPatternNode melody4[] =
-{
- PATTERN_NODE(NOTE_7_Cf , 2000),
-PATTERN_NODE(NOTE_8_SOL , 2000),
-PATTERN_NODE_END(0)
-};
+    {
+        PATTERN_NODE(NOTE_7_Cf, 2000),
+        PATTERN_NODE(NOTE_8_SOL, 2000),
+        PATTERN_NODE_END(0)};
+
+static void countSegments(tsEncoderAppParams *params, const tsEncoderAppConsts *consts);
 
 static PT_THREAD(encoderAppThread)
 {
-    tsEncoderAppParams *params       = process->parameters;
+    tsEncoderAppParams *params = process->parameters;
     const tsEncoderAppConsts *consts = process->constants;
-    
+
     UNUSED(consts);
     UNUSED(params);
 
@@ -80,12 +84,12 @@ tsTarget target;
 /// @brief  Initialization function of encoderApp
 PROCESS_INIT_PROTO(encoderAppInit)
 {
-    tsEncoderAppParams *params       = process->parameters;
+    tsEncoderAppParams *params = process->parameters;
     const tsEncoderAppConsts *consts = process->constants;
 
     PROCESS_STATE_CHANGE(process, encoderAppInitialStateHandler);
-    //eventPost(process->enumeration, eEPEventUIUpdate, NULL, 0);
-    timerEventStart(&(params->timerUITimer) , 1500);
+    // eventPost(process->enumeration, eEPEventUIUpdate, NULL, 0);
+    timerEventStart(&(params->timerUITimer), 1500);
 
     devIoInit(consts->redLed, NULL);
     devIoInit(consts->blueLed, NULL);
@@ -96,9 +100,11 @@ PROCESS_INIT_PROTO(encoderAppInit)
     devIoPut(consts->redLed, HIGH);
     devIoPut(consts->blueLed, LOW);
     devIoPut(consts->greenLed, LOW);
-    
-    devComInit(consts->uart);
-    devComOpen(consts->uart , &target);
+
+    const tsDevCom *uartDevice = (const tsDevCom *)consts->uart;
+
+    devComInit(uartDevice);
+    devComOpen(uartDevice, &target);
 
     params->timerUIGeneral.post.destination = process->enumeration;
     params->timerUIGeneral.post.source = process->enumeration;
@@ -110,7 +116,7 @@ PROCESS_INIT_PROTO(encoderAppInit)
 /// @brief  Deinitialization function of encoderApp
 PROCESS_DEINIT_PROTO(encoderAppDeinit)
 {
-    tsEncoderAppParams *params       = process->parameters;
+    tsEncoderAppParams *params = process->parameters;
     const tsEncoderAppConsts *consts = process->constants;
 
     UNUSED(params); // REMOVE IF USED
@@ -119,7 +125,6 @@ PROCESS_DEINIT_PROTO(encoderAppDeinit)
     PROCESS_STATE_CHANGE(process, NULL);
     threadStop(process, process->threadFunction);
     process->initialized = 0; // If process needs other checks, clear this another time
-    
 }
 uint8_t txb[2] = {'o', 'k'};
 uint8_t rxb[2];
@@ -128,7 +133,7 @@ uint8_t Prerxb[2];
 /// @brief  Event handler function of encoderApp Initial state
 static PROCESS_HANDLER_PROTO(encoderAppInitialStateHandler)
 {
-    tsEncoderAppParams *params       = process->parameters;
+    tsEncoderAppParams *params = process->parameters;
     const tsEncoderAppConsts *consts = process->constants;
 
     UNUSED(params); // REMOVE IF USED
@@ -136,40 +141,122 @@ static PROCESS_HANDLER_PROTO(encoderAppInitialStateHandler)
 
     switch (eventCurrent.event)
     {
-        case eEPEventUIUpdate: 
-        {
-            //      devIoPut(consts->redLed , LOW);
-            //      devIoPut(consts->buzzer , (uint32_t)melody);
-            //      timerEventStart(&(params->timerUITimer) , 1);
-            //      devIoPut(consts->sevenSegmentDisplay , 1 );
-          
-            
-        }
-        break;
-        
-        case eEPEventLedsBlink:
-        {
-            //      devIoPut(consts->blueLed , HIGH);
-            //      devIoPut(consts->redLed , LOW);
-            //      devIoPut(consts->buzzer , (uint32_t)melody);
-            //      timerEventStart(&(params->timergreenLedBlink) , 2000 );
-        }
-        break;
-        case eEPEventgreenLedsBlink:
-        {
+    case eEPEventUIUpdate:
+    {
+        //      devIoPut(consts->redLed , LOW);
+        //      devIoPut(consts->buzzer , (uint32_t)melody);
+        //      timerEventStart(&(params->timerUITimer) , 1);
+        //      devIoPut(consts->sevenSegmentDisplay , 1 );
+    }
+    break;
 
-        }
-        break;
-        case eEPEventLed2:
-        {
+    case eEPEventLedsBlink:
+    {
+        //      devIoPut(consts->blueLed , HIGH);
+        //      devIoPut(consts->redLed , LOW);
+        //      devIoPut(consts->buzzer , (uint32_t)melody);
+        //      timerEventStart(&(params->timergreenLedBlink) , 2000 );
+    }
+    break;
 
-        }
-        break;
-        case p71Released:
+    case eEPEventgreenLedsBlink:
+    {
+    }
+    break;
+
+    case eEPEventLed2:
+    {
+    }
+    break;
+
+    case p71Released:
+    {
+        //      devComSend(consts->uart , txb , sizeof(txb));
+    }
+    break;
+
+    case plusButtonPressed: // + tuşu event'ı
+    {
+        if (segmentValue < SEGMENT_MAX)
         {
-            //      devComSend(consts->uart , txb , sizeof(txb));            
+            segmentValue++;
+            devIoPut(consts->sevenSegmentDisplay, segmentValue);
+            countUp = true;
         }
-        break;
-        
+        else
+        {
+            devIoPut(consts->buzzer, (uint32_t)melody);
+        }
+    }
+    break;
+
+    case minusButtonPressed: // - tuşu event'ı
+    {
+        if (segmentValue > SEGMENT_MIN)
+        {
+            segmentValue--;
+            devIoPut(consts->sevenSegmentDisplay, segmentValue);
+            countUp = false;
+        }
+        else
+        {
+            devIoPut(consts->buzzer, (uint32_t)melody);
+        }
+    }
+    break;
+
+    case okButtonPressed: // OK tuşu event'ı
+    {
+        counting = !counting; // Saymayı başlat veya durdur
+        if (counting)
+        {
+            timerEventStart(&(params->timerUITimer), 1000); // Hocam burada 1 saniye sonra sayma işlemi başlasın dedik
+        }
+    }
+    break;
+
+    case eEPEventUITimer:
+    {
+        countSegments(params, consts);
+    }
+    break;
+    }
+}
+
+static void countSegments(tsEncoderAppParams *params, const tsEncoderAppConsts *consts)
+{
+    if (counting)
+    {
+        if (countUp)
+        {
+            if (segmentValue < SEGMENT_MAX)
+            {
+                segmentValue++;
+                devIoPut(consts->sevenSegmentDisplay, segmentValue);
+            }
+            else
+            {
+                devIoPut(consts->buzzer, (uint32_t)melody);
+                counting = false;
+            }
+        }
+        else
+        {
+            if (segmentValue > SEGMENT_MIN)
+            {
+                segmentValue--;
+                devIoPut(consts->sevenSegmentDisplay, segmentValue);
+            }
+            else
+            {
+                devIoPut(consts->buzzer, (uint32_t)melody);
+                counting = false;
+            }
+        }
+
+        if (counting)
+        {
+            timerEventStart(&(params->timerUITimer), 1000); // 1 saniye sonra tekrar sayma işlemi yap
+        }
     }
 }

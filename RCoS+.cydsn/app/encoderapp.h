@@ -11,6 +11,11 @@
 #ifndef FILE_ENCODERAPP_H
 #define FILE_ENCODERAPP_H
 
+#define plusButtonPressed 1001  // + tuşu event ID
+#define minusButtonPressed 1002 // - tuşu event ID
+#define okButtonPressed 1003    // OK tuşu event ID
+#define eEPEventUITimer 1004    // Timer event ID
+
 /** INCLUDES ******************************************************************/
 #include "rcos.h"
 
@@ -49,28 +54,28 @@ typedef enum
 /// @brief  Parameters of a EncoderApp process
 typedef struct
 {
-    tsTimerEvent timerUIGeneral;              ///<      Timer event for general UI operations
-    tsTimerEvent timerUITimer;              ///<      Timer event for general UI operations
+    tsTimerEvent timerUIGeneral; ///<      Timer event for general UI operations
+    tsTimerEvent timerUITimer;   ///<      Timer event for general UI operations
     tsTimerEvent timerLedBlink;
     tsTimerEvent timergreenLedBlink;
     tsTimerEvent timerLed2Blink;
 
-    uint8_t lockingState;                      ///<    Storing locking states
-    uint8_t passwordIndex;                      ///<    Storing password item index
-    uint16_t password;                          ///<    Password value
-    uint16_t unlockValue;                       ///<    Value to unlock password
+    uint8_t lockingState;  ///<    Storing locking states
+    uint8_t passwordIndex; ///<    Storing password item index
+    uint16_t password;     ///<    Password value
+    uint16_t unlockValue;  ///<    Value to unlock password
 } tsEncoderAppParams;
 
 /// @brief  Constants of a EncoderApp process
 typedef struct
 {
-    const tsDevIo *redLed;                      ///<    IO device for red led
-    const tsDevIo *blueLed;                     ///<    IO device for blue led
-    const tsDevIo *greenLed;                   ///<    IO device for green led
-    const tsDevIo *sevenSegmentDisplay;         ///<    IO device for seven segment display
-    const tsDevIo *encoder;                     ///<    IO device for encoder
-    const tsDevIo *buzzer;                      ///<    IO device for buzzer
-    const tsDevIo *uart;                        ///<    IO device for buzzer
+    const tsDevIo *redLed;              ///<    IO device for red led
+    const tsDevIo *blueLed;             ///<    IO device for blue led
+    const tsDevIo *greenLed;            ///<    IO device for green led
+    const tsDevIo *sevenSegmentDisplay; ///<    IO device for seven segment display
+    const tsDevIo *encoder;             ///<    IO device for encoder
+    const tsDevIo *buzzer;              ///<    IO device for buzzer
+    const tsDevIo *uart;                ///<    IO device for buzzer
 } tsEncoderAppConsts;
 
 /** @brief  EncoderApp process object creation macro
@@ -83,24 +88,24 @@ typedef struct
  *  @param  _encoder IO device for encoder
  *  @param  _buzzer IO device for buzzer
  */
-#define PROCESS_ENCODERAPP_CREATE(_name, _enum, _redLed, _blueLed, _greenLed, _sevenSegmentDisplay, _encoder, _buzzer , _devUart) \
-    tsEncoderAppParams _name##Params =           \
-    {                                                                                       \
-        .timerLedBlink = TIMER_EVENT_INIT(_enum , _enum , eEPEventLedsBlink)   ,            \
-        .timergreenLedBlink = TIMER_EVENT_INIT(_enum , _enum , eEPEventgreenLedsBlink)  ,  \
-        .timerLed2Blink = TIMER_EVENT_INIT(_enum , _enum , eEPEventLed2)  ,  \
-        .timerUITimer = TIMER_EVENT_INIT(_enum , _enum , eEPEventUIUpdate)   ,            \
-    };                                            \
-    const tsEncoderAppConsts _name##Consts =     \
-    {                                                        \
-        .redLed = &_redLed,                                                         \
-        .blueLed = &_blueLed,                                                       \
-        .greenLed = &_greenLed,                                                   \
-        .sevenSegmentDisplay = &_sevenSegmentDisplay,                               \
-        .encoder = &_encoder,                                                       \
-        .buzzer = &_buzzer,                                                         \
-        .uart = &_devUart,                                                         \
-    };                                            \
+#define PROCESS_ENCODERAPP_CREATE(_name, _enum, _redLed, _blueLed, _greenLed, _sevenSegmentDisplay, _encoder, _buzzer, _devUart) \
+    tsEncoderAppParams _name##Params =                                                                                           \
+        {                                                                                                                        \
+            .timerLedBlink = TIMER_EVENT_INIT(_enum, _enum, eEPEventLedsBlink),                                                  \
+            .timergreenLedBlink = TIMER_EVENT_INIT(_enum, _enum, eEPEventgreenLedsBlink),                                        \
+            .timerLed2Blink = TIMER_EVENT_INIT(_enum, _enum, eEPEventLed2),                                                      \
+            .timerUITimer = TIMER_EVENT_INIT(_enum, _enum, eEPEventUIUpdate),                                                    \
+    };                                                                                                                           \
+    const tsEncoderAppConsts _name##Consts =                                                                                     \
+        {                                                                                                                        \
+            .redLed = &_redLed,                                                                                                  \
+            .blueLed = &_blueLed,                                                                                                \
+            .greenLed = &_greenLed,                                                                                              \
+            .sevenSegmentDisplay = &_sevenSegmentDisplay,                                                                        \
+            .encoder = &_encoder,                                                                                                \
+            .buzzer = &_buzzer,                                                                                                  \
+            .uart = &_devUart,                                                                                                   \
+    };                                                                                                                           \
     PROCESS_CREATE(_name, encoderAppInit, encoderAppDeinit, _enum, &_name##Params, &_name##Consts)
 
 /** @} */
