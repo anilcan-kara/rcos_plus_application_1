@@ -1,0 +1,7 @@
++ Tuşuna basuldığında 7 Segment 1 artacak.
+- Tuşuna basıldığında 7 Segment 1 azalacak.
+OK Tuşuna basıldığında +/- hangi tuşa son basılmışsa , 1sn aralıklarla geri ya da ileri sayacak. 
+0 ve 15de duracak. Durunca buzzer uyarı verecek.
+Eğer + veya - tuşları ile 0-15 değerlerine getirilmişse buzzer uyarı verecek. 
+Örneğin 0 konumunda - tuşuna basarsak buzzer uyarı sesi verecek. tekrar tekrar 
+basışta uyarı sesi vermeye devam edecek.
